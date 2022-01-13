@@ -6,8 +6,6 @@ from rest_framework.response import Response
 from bs4 import BeautifulSoup
 import requests
 from rest_framework.decorators import action
-import urllib.request
-from urllib.parse import urljoin
 import re
 
 # Create your views here.
@@ -28,12 +26,21 @@ class UrlView(viewsets.ModelViewSet):
                 continue
             soup = BeautifulSoup(response.content, 'html.parser')
             for link in soup.find_all('a', href=True):
-                if re.match('https.*', link.get('href')):
-                    urlobj = Url(url=link.get('href'))
-                    urlobj.save()
+                link = link.get('href')
+                if link[-1] == '/':
+                    link = link[:-1]
+                if re.match('https.*', link):
+                    urlobj = Url(url=link)
+                    try:
+                        urlobj.save()
+                    except:
+                        continue
                 else:
-                    urlobj = Url(url=url+link.get('href'))
-                    urlobj.save()
+                    urlobj = Url(url=url+link)
+                    try:
+                        urlobj.save()
+                    except:
+                        continue
         return Response({'data':'data'})
 
 
@@ -47,7 +54,13 @@ class SiteView(viewsets.ModelViewSet):
         response = requests.get(request.data['site'])
         soup = BeautifulSoup(response.content, 'html.parser')
         for loc in soup.find_all('loc'):
-            url = Url(url=loc.string)
-            url.save()
+            link = loc.string
+            if link[-1] == '/':
+                link = link[:-1]
+            urlobj = Url(url=link)
+            try:
+                urlobj.save()
+            except:
+                continue
         return Response({'data':'data'})
     
